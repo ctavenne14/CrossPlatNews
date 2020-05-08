@@ -1,0 +1,7 @@
+{
+  "name": "CrossPlatNews",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react"
+}
