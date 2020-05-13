@@ -11,6 +11,7 @@ const INITIAL_STATE = {
     email: "",
 }
 
+
 const Forgot = (props) => {
 
     const {handleSubmit, handleChange, values, isSubmitting} = useForm(INITIAL_STATE, validatePasswordReset, handlePasswordReset)
@@ -21,7 +22,7 @@ const Forgot = (props) => {
         const {email} = values;
         try{
             await firebase.resetPassword(email);
-            toast("YCheck your email to rest your password.");
+            toast("Check your email to rest your password.");
             props.history.push("/");
         } catch (err) {
             console.error("Password Reset Error", err);
