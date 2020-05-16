@@ -102,7 +102,7 @@ const Profile = (props) => {
                   color="primary"
                   fill="outline"
                 >
-                  Sign Up
+                  Login
                 </IonButton>
               </IonCol>
             </IonRow>
