@@ -13,18 +13,21 @@ import {
 } from "@ionic/react";
 import { closeCircleOutline } from "ionicons/icons";
 import LinkItem from "./Link/LinkItem";
+import CommentModal from "./Link/CommentModal";
+import LinkComment from "./Link/LinkComment";
 
 const { Browser } = Plugins;
 
 const Link = (props) => {
   const { user } = React.useContext(UserContext);
   const [link, setLink] = React.useState(null);
+  const [showModal, setShowModal] = React.useState(false);
   const linkId = props.match.params.linkId;
   const linkRef = firebase.db.collection("links").doc(linkId);
 
   React.useEffect(() => {
     getLink();
-    //eslint-disable-next-line
+    // eslint-disable-next-line
   }, [linkId]);
 
   function getLink() {
@@ -33,15 +36,51 @@ const Link = (props) => {
     });
   }
 
+  function handleOpenModal() {
+    if (!user) {
+      props.history.push("/login");
+    } else {
+      setShowModal(true);
+    }
+  }
+
+  function handleCloseModal() {
+    setShowModal(false);
+  }
+
+  function handleAddComment(commentText) {
+    if (!user) {
+      props.history.push("/login");
+    } else {
+      linkRef.get().then((doc) => {
+        if (doc.exists) {
+          const previousComments = doc.data().comments;
+          const newComment = {
+            postedBy: { id: user.uid, name: user.displayName },
+            created: Date.now(),
+            text: commentText,
+          };
+          const updatedComments = [...previousComments, newComment];
+          linkRef.update({ comments: updatedComments });
+          setLink((prevState) => ({
+            ...prevState,
+            comments: updatedComments,
+          }));
+        }
+      });
+      setShowModal(false);
+    }
+  }
+
   function handleAddVote() {
     if (!user) {
       props.history.push("/login");
     } else {
       linkRef.get().then((doc) => {
         if (doc.exists) {
-          const prevVotes = doc.data().votes;
+          const previousVotes = doc.data().votes;
           const vote = { votedBy: { id: user.uid, name: user.displayName } };
-          const updatedVotes = [...prevVotes, vote];
+          const updatedVotes = [...previousVotes, vote];
           const voteCount = updatedVotes.length;
           linkRef.update({ votes: updatedVotes, voteCount });
           setLink((prevState) => ({
@@ -58,7 +97,7 @@ const Link = (props) => {
     linkRef
       .delete()
       .then(() => {
-        console.log(`Document with ID ${link.Id} deleted`);
+        console.log(`Document with ID ${link.id} deleted`);
       })
       .catch((err) => {
         console.error("Error deleting document", err);
@@ -85,6 +124,12 @@ const Link = (props) => {
         action={handleDeleteLink}
       />
       <IonContent>
+        <CommentModal
+          isOpen={showModal}
+          title="New Comment"
+          sendAction={handleAddComment}
+          closeAction={handleCloseModal}
+        />
         {link && (
           <>
             <IonGrid>
@@ -92,15 +137,27 @@ const Link = (props) => {
                 <IonCol class="ion-text-center">
                   <LinkItem link={link} browser={openBrowser} />
                   <IonButton onClick={() => handleAddVote()} size="small">
-                    UpVote
+                    Upvote
+                  </IonButton>
+                  <IonButton onClick={() => handleOpenModal()} size="small">
+                    Comment
                   </IonButton>
                 </IonCol>
               </IonRow>
             </IonGrid>
+            {link.comments.map((comment, index) => (
+              <LinkComment
+                key={index}
+                comment={comment}
+                link={link}
+                setLink={setLink}
+              />
+            ))}
           </>
         )}
       </IonContent>
     </IonPage>
   );
 };
+
 export default Link;
